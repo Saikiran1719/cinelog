@@ -160,9 +160,6 @@
 </div>
 
 <script>
-const OR_KEY = CONFIG.OR_KEY;
-const OR_MODEL = CONFIG.OR_MODEL;
-
 const PALETTES = CONFIG.PALETTES;
 
 let films=[], lists=[], currentRating=0, activeFilter='all', nextId=1;
@@ -289,29 +286,27 @@ function fillPrompt(text){document.getElementById('aiInput').value=text;document
 
 // chip toggle: only one active per group
 function toggleChip(el){
-  const group = el.dataset.group;
-  const wasActive = el.classList.contains('active');
+  const group=el.dataset.group;
+  const wasActive=el.classList.contains('active');
   document.querySelectorAll(`.chip-toggle[data-group="${group}"]`).forEach(c=>c.classList.remove('active'));
   if(!wasActive) el.classList.add('active');
 }
-
 function getSelectedChip(group){
-  const el = document.querySelector(`.chip-toggle[data-group="${group}"].active`);
-  return el ? el.dataset.val : null;
+  const el=document.querySelector(`.chip-toggle[data-group="${group}"].active`);
+  return el?el.dataset.val:null;
 }
 
 async function getAIRec(){
-  const freeText = document.getElementById('aiInput').value.trim();
-  const industry = getSelectedChip('industry');
-  const genre    = getSelectedChip('genre');
+  const freeText=document.getElementById('aiInput').value.trim();
+  const industry=getSelectedChip('industry');
+  const genre=getSelectedChip('genre');
 
-  // Build a structured query from chips + free text
-  let structuredQuery = '';
-  if(industry && genre) structuredQuery = `${industry}-language ${genre} films`;
-  else if(industry)     structuredQuery = `${industry}-language films`;
-  else if(genre)        structuredQuery = `${genre} films`;
-  if(freeText) structuredQuery = structuredQuery ? `${structuredQuery} — ${freeText}` : freeText;
-  if(!structuredQuery){ alert('Please select an industry, genre, or type a query.'); return; }
+  let structuredQuery='';
+  if(industry&&genre)  structuredQuery=`${industry}-language ${genre} films`;
+  else if(industry)    structuredQuery=`${industry}-language films`;
+  else if(genre)       structuredQuery=`${genre} films`;
+  if(freeText) structuredQuery=structuredQuery?`${structuredQuery} — ${freeText}`:freeText;
+  if(!structuredQuery){alert('Please select an industry, genre, or type a query.');return;}
 
   const btn=document.getElementById('aiBtn');
   const loading=document.getElementById('aiLoading');
@@ -319,21 +314,16 @@ async function getAIRec(){
   const err=document.getElementById('aiError');
   btn.disabled=true;loading.classList.add('visible');resp.classList.remove('visible');err.classList.remove('visible');
 
-  // Show what we're searching for
-  resp.innerHTML = '';
+  const watched=films.slice(0,8).map(f=>`${f.title} (${f.year})`).join(', ')||'nothing yet';
 
-  const watched=films.slice(0,8).map(f=>`${f.title} (${f.year})`).join(', ') || 'nothing yet';
+  const industryLine=industry
+    ?`INDUSTRY LOCK: You MUST only recommend films from the ${industry} film industry. Every single film must be a ${industry}-language production. Do NOT include Hollywood, Bollywood, or any other industry.`
+    :`You may recommend films from any industry appropriate to the query.`;
+  const genreLine=genre
+    ?`GENRE LOCK: You MUST only recommend ${genre} films. Every film must genuinely belong to the ${genre} genre.`
+    :`Match the genre to whatever the user describes.`;
 
-  // Build strict system prompt
-  const industryLine = industry
-    ? `INDUSTRY LOCK: You MUST only recommend films from the ${industry} film industry. Every single film must be a ${industry}-language production. Do NOT include any film from Hollywood, Bollywood, or any other industry unless the user explicitly said "${industry}" IS that industry.`
-    : `You may recommend films from any industry as appropriate to the user's query.`;
-
-  const genreLine = genre
-    ? `GENRE LOCK: You MUST only recommend ${genre} films. Every film must genuinely belong to the ${genre} genre. Do not include films of other genres.`
-    : `Match the genre to whatever the user describes.`;
-
-  const systemPrompt = `You are an expert film advisor with encyclopedic knowledge of world cinema — especially Indian regional cinema (Telugu/Tollywood, Tamil/Kollywood, Malayalam/Mollywood, Kannada/Sandalwood, Hindi/Bollywood), Korean, Japanese, French, Iranian, Italian, and Hollywood.
+  const systemPrompt=`You are an expert film advisor with encyclopedic knowledge of world cinema — especially Indian regional cinema (Telugu/Tollywood, Tamil/Kollywood, Malayalam/Mollywood, Hindi/Bollywood), Korean, Japanese, French, Iranian, Italian, and Hollywood.
 
 ${industryLine}
 
@@ -341,42 +331,30 @@ ${genreLine}
 
 FORMAT RULES (follow exactly):
 - Start with one sentence: "Here are 10 [industry] [genre] films you should watch:"
-- Then list exactly 10 films, numbered 1–10
-- Each line: **Film Title** (Year) — one sentence on why it's a great ${genre||'film'} from ${industry||'this cinema'}
-- Do NOT add any films outside the locked industry or genre
-- Do NOT explain or apologize — just give the list
-- Films the user already watched (skip these if possible): ${watched}`;
+- Then list exactly 10 films, numbered 1-10
+- Each line: **Film Title** (Year) - one sentence on why it is a great pick
+- Do NOT add films outside the locked industry or genre
+- Do NOT explain or apologize, just give the list
+- Films the user already watched (skip these): ${watched}`;
 
   try{
-    const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+    // Call secure Vercel serverless route — API key never exposed in browser
+    const res=await fetch('/api/recommend',{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':`Bearer ${OR_KEY}`,
-        'HTTP-Referer':CONFIG.OR_REFERER,
-        'X-Title':CONFIG.OR_TITLE,
-      },
-      body:JSON.stringify({
-        model:OR_MODEL,
-        max_tokens:1200,
-        messages:[
-          {role:'system', content: systemPrompt},
-          {role:'user',   content: structuredQuery}
-        ]
-      })
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({systemPrompt,userQuery:structuredQuery})
     });
     if(!res.ok){
       const errData=await res.json().catch(()=>({}));
-      throw new Error(errData?.error?.message||`HTTP ${res.status}`);
+      throw new Error(errData?.error||`HTTP ${res.status}`);
     }
     const data=await res.json();
-    const text=data.choices?.[0]?.message?.content||'No response received.';
-    // Show the resolved query as a label above results
-    const label = `<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">Results for: <span style="color:rgba(200,168,75,0.8)">${structuredQuery}</span></div>`;
-    resp.innerHTML = label + text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    const text=data.text||'No response received.';
+    const label=`<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">Results for: <span style="color:rgba(200,168,75,0.8)">${structuredQuery}</span></div>`;
+    resp.innerHTML=label+text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
     resp.classList.add('visible');
   }catch(e){
-    err.textContent='⚠ '+(e.message||'Could not reach OpenRouter. Check your API key or network.');
+    err.textContent='⚠ '+(e.message||'Could not reach server. Check deployment.');
     err.classList.add('visible');
   }
   loading.classList.remove('visible');btn.disabled=false;
