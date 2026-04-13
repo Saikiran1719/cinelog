@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="styles.css"></head>
+<body>
+<script src="config.js"></script>
+
+<h2 class="sr-only">Cinelog — personal film diary and tracker powered by AI.</h2>
+
+<nav>
+  <div class="logo">cine<span>log</span></div>
+  <div class="nav-links">
+    <div class="nav-link active" onclick="switchNav(this,'films')">films</div>
+    <div class="nav-link" onclick="switchNav(this,'diary')">diary</div>
+    <div class="nav-link" onclick="switchNav(this,'lists')">lists</div>
+    <div class="nav-link" onclick="switchNav(this,'ai')">discover</div>
+  </div>
+  <div class="nav-right">
+    <input class="search-box" type="text" placeholder="search films…" id="searchInput" oninput="renderFilmsGrid()" />
+    <div class="avatar">C</div>
+  </div>
+</nav>
+
+<main>
+<div class="profile-strip">
+  <div class="profile-avatar">C</div>
+  <div>
+    <div class="profile-name">Cinephile</div>
+    <div class="profile-handle">@cinelog_user</div>
+    <div class="profile-stats">
+      <div class="pstat"><span class="pstat-num" id="stat-watched">0</span><span class="pstat-label">watched</span></div>
+      <div class="pstat"><span class="pstat-num" id="stat-year">0</span><span class="pstat-label">this year</span></div>
+      <div class="pstat"><span class="pstat-num" id="stat-liked">0</span><span class="pstat-label">liked</span></div>
+      <div class="pstat"><span class="pstat-num" id="stat-reviews">0</span><span class="pstat-label">reviews</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="page active" id="page-films">
+  <div class="action-row">
+    <button class="action-btn primary" onclick="openAddModal()">＋ log a film</button>
+    <button class="action-btn" onclick="setFilter('all')" id="f-all" style="border-color:var(--gold);color:var(--gold)">all</button>
+    <button class="action-btn" onclick="setFilter('liked')" id="f-liked">♥ liked</button>
+    <button class="action-btn" onclick="setFilter('reviewed')" id="f-reviewed">★ reviewed</button>
+  </div>
+  <div class="section-header">
+    <div class="section-title">Your Films</div>
+    <div class="section-sub" id="films-count">0 films</div>
+  </div>
+  <div class="films-grid" id="films-grid"></div>
+</div>
+
+<div class="page" id="page-diary">
+  <div class="action-row"><button class="action-btn primary" onclick="openAddModal()">＋ add entry</button></div>
+  <div class="section-header">
+    <div class="section-title">Film Diary</div>
+    <div class="section-sub">your watch history, in order</div>
+  </div>
+  <div id="diary-container"></div>
+</div>
+
+<div class="page" id="page-lists">
+  <div class="action-row"><button class="action-btn primary" onclick="openListModal()">＋ new list</button></div>
+  <div class="section-header"><div class="section-title">Your Lists</div></div>
+  <div class="lists-grid" id="lists-grid"></div>
+</div>
+
+<div class="page" id="page-ai">
+  <div class="ai-section">
+    <div class="ai-header">
+      <div class="ai-icon">✦</div>
+      <div class="ai-title">AI Film Advisor</div>
+    </div>
+    <div class="ai-powered">powered by <span>AI</span>.</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">industry</div>
+      <div class="chips">
+        <div class="chip chip-toggle" data-group="industry" data-val="Telugu" onclick="toggleChip(this)">Telugu</div>
+        <div class="chip chip-toggle" data-group="industry" data-val="Tamil" onclick="toggleChip(this)">Tamil</div>
+        <div class="chip chip-toggle" data-group="industry" data-val="Malayalam" onclick="toggleChip(this)">Malayalam</div>
+        <div class="chip chip-toggle" data-group="industry" data-val="Hindi Bollywood" onclick="toggleChip(this)">Bollywood</div>
+        <div class="chip chip-toggle" data-group="industry" data-val="Korean" onclick="toggleChip(this)">Korean</div>
+        <div class="chip chip-toggle" data-group="industry" data-val="Japanese" onclick="toggleChip(this)">Japanese</div>
+        <div class="chip chip-toggle" data-group="industry" data-val="Hollywood" onclick="toggleChip(this)">Hollywood</div>
+        <div class="chip chip-toggle" data-group="industry" data-val="French" onclick="toggleChip(this)">French</div>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">genre</div>
+      <div class="chips">
+        <div class="chip chip-toggle" data-group="genre" data-val="Action" onclick="toggleChip(this)">Action</div>
+        <div class="chip chip-toggle" data-group="genre" data-val="Romance" onclick="toggleChip(this)">Romance</div>
+        <div class="chip chip-toggle" data-group="genre" data-val="Thriller" onclick="toggleChip(this)">Thriller</div>
+        <div class="chip chip-toggle" data-group="genre" data-val="Comedy" onclick="toggleChip(this)">Comedy</div>
+        <div class="chip chip-toggle" data-group="genre" data-val="Drama" onclick="toggleChip(this)">Drama</div>
+        <div class="chip chip-toggle" data-group="genre" data-val="Horror" onclick="toggleChip(this)">Horror</div>
+        <div class="chip chip-toggle" data-group="genre" data-val="Sci-Fi" onclick="toggleChip(this)">Sci-Fi</div>
+        <div class="chip chip-toggle" data-group="genre" data-val="Family" onclick="toggleChip(this)">Family</div>
+        <div class="chip chip-toggle" data-group="genre" data-val="Crime" onclick="toggleChip(this)">Crime</div>
+        <div class="chip chip-toggle" data-group="genre" data-val="Fantasy" onclick="toggleChip(this)">Fantasy</div>
+      </div>
+    </div>
+    <div class="ai-input-row">
+      <input class="ai-input" id="aiInput" type="text" placeholder="e.g. 'something like Stalker but more accessible'…" onkeydown="if(event.key==='Enter')getAIRec()" />
+      <button class="ai-btn" id="aiBtn" onclick="getAIRec()">Ask ✦</button>
+    </div>
+    <div class="ai-loading" id="aiLoading">
+      <div class="dot-pulse"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <span>Consulting the film oracle…</span>
+    </div>
+    <div class="ai-error" id="aiError"></div>
+    <div class="ai-response" id="aiResponse"></div>
+  </div>
+  <div class="section-header">
+    <div class="section-title">Suggested for You</div>
+    <div class="section-sub">curated picks based on your taste</div>
+  </div>
+  <div class="films-grid" id="suggestions-grid"></div>
+</div>
+</main>
+
+<!-- ADD FILM MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addModal')">×</button>
+    <div class="modal-title">Log a Film</div>
+    <div class="form-group"><label class="form-label">Film Title</label><input class="form-input" id="newTitle" type="text" placeholder="e.g. Mulholland Drive" /></div>
+    <div class="form-group"><label class="form-label">Year</label><input class="form-input" id="newYear" type="text" placeholder="e.g. 2001" maxlength="4" /></div>
+    <div class="form-group"><label class="form-label">Director</label><input class="form-input" id="newDirector" type="text" placeholder="e.g. David Lynch" /></div>
+    <div class="form-group">
+      <label class="form-label">Your Rating</label>
+      <div class="star-picker">
+        <span class="star-pick" data-v="1" onclick="pickStar(1)">★</span>
+        <span class="star-pick" data-v="2" onclick="pickStar(2)">★</span>
+        <span class="star-pick" data-v="3" onclick="pickStar(3)">★</span>
+        <span class="star-pick" data-v="4" onclick="pickStar(4)">★</span>
+        <span class="star-pick" data-v="5" onclick="pickStar(5)">★</span>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Review / Notes</label><textarea class="form-input form-textarea" id="newReview" placeholder="What did you think?"></textarea></div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;color:var(--ink2)">
+        <input type="checkbox" id="newLiked" style="accent-color:var(--rust);width:16px;height:16px"> Liked it ♥
+      </label>
+    </div>
+    <button class="form-btn" onclick="addFilm()">Save to Diary</button>
+  </div>
+</div>
+
+<!-- LIST MODAL -->
+<div class="modal-overlay" id="listModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('listModal')">×</button>
+    <div class="modal-title">New List</div>
+    <div class="form-group"><label class="form-label">List Name</label><input class="form-input" id="listName" type="text" placeholder="e.g. Favourite Horrors" /></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-input form-textarea" id="listDesc" placeholder="What's this list about?"></textarea></div>
+    <button class="form-btn" onclick="addList()">Create List</button>
+  </div>
+</div>
+
+<script>
+const OR_KEY = CONFIG.OR_KEY;
+const OR_MODEL = CONFIG.OR_MODEL;
+
+const PALETTES = CONFIG.PALETTES;
+
+let films=[], lists=[], currentRating=0, activeFilter='all', nextId=1;
+
+function renderStars(r){return Array.from({length:5},(_,i)=>`<span class="star ${i<r?'filled':'empty'}">★</span>`).join('');}
+
+function filmCard(f){return `<div class="film-card" onclick="showDetail(${f.id})">
+  <div class="film-poster"><div class="film-poster-inner ${f.palette}">
+    <div class="poster-gradient"></div>
+    <div style="position:relative;z-index:1;text-align:center;width:100%">
+      <div class="poster-title">${f.title}</div><div class="poster-year">${f.year}</div>
+    </div>
+  </div></div>
+  ${f.liked?'<div class="watched-badge liked-badge">♥</div>':''}
+  <div class="watched-badge">✓</div>
+  <div class="film-rating">${renderStars(f.rating)}</div>
+  <div class="film-meta">${f.director||''}</div>
+</div>`;}
+
+function renderFilmsGrid(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  let list=films.filter(f=>{
+    if(q&&!f.title.toLowerCase().includes(q)&&!f.director.toLowerCase().includes(q))return false;
+    if(activeFilter==='liked')return f.liked;
+    if(activeFilter==='reviewed')return f.review;
+    return true;
+  });
+  document.getElementById('films-count').textContent=list.length+' film'+(list.length!==1?'s':'');
+  document.getElementById('films-grid').innerHTML=list.map(filmCard).join('')+
+    `<div class="add-film-card" onclick="openAddModal()"><div class="add-icon">＋</div><div>log a film</div></div>`;
+}
+
+function renderDiary(){
+  const c=document.getElementById('diary-container');
+  const sorted=[...films].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!sorted.length){c.innerHTML='<div class="empty-state"><span class="empty-icon">📽</span>Start logging films to build your diary</div>';return;}
+  c.innerHTML=`<table class="diary-table"><thead><tr>
+    <th>date</th><th>film</th><th>year</th><th>rating</th><th style="color:var(--rust)">♥</th><th>review</th>
+  </tr></thead><tbody>${sorted.map(f=>{
+    const d=f.date?new Date(f.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'—';
+    return `<tr><td class="diary-date">${d}</td><td class="diary-title">${f.title}</td><td class="diary-year">${f.year}</td>
+    <td><div class="diary-stars">${renderStars(f.rating)}</div></td>
+    <td class="diary-liked">${f.liked?'♥':''}</td>
+    <td class="diary-review">${f.review||'<span style="opacity:0.4">—</span>'}</td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function renderLists(){
+  const g=document.getElementById('lists-grid');
+  g.innerHTML=lists.map(l=>{
+    const lf=l.films.map(id=>films.find(f=>f.id===id)).filter(Boolean).slice(0,4);
+    return `<div class="list-card">
+      <div class="list-posters">${lf.map(f=>`<div class="list-poster-mini"><div style="width:100%;height:100%;border-radius:3px" class="${f.palette}"></div></div>`).join('')}</div>
+      <div class="list-name">${l.name}</div><div class="list-count">${l.films.length} film${l.films.length!==1?'s':''} · ${l.desc}</div>
+    </div>`;
+  }).join('')+`<div class="list-card" style="border:2px dashed var(--parchment3);display:flex;align-items:center;justify-content:center;min-height:100px;cursor:pointer;color:var(--ink3)" onclick="openListModal()">
+    <div style="text-align:center;font-size:13px">＋<br>new list</div></div>`;
+}
+
+function renderSuggestions(){
+  document.getElementById('suggestions-grid').innerHTML='';
+}
+
+function updateStats(){
+  const yr=new Date().getFullYear().toString();
+  document.getElementById('stat-watched').textContent=films.length;
+  document.getElementById('stat-year').textContent=films.filter(f=>f.date&&f.date.startsWith(yr)).length;
+  document.getElementById('stat-liked').textContent=films.filter(f=>f.liked).length;
+  document.getElementById('stat-reviews').textContent=films.filter(f=>f.review).length;
+}
+
+function renderAll(){renderFilmsGrid();renderDiary();renderLists();renderSuggestions();updateStats();}
+
+function switchNav(el,page){
+  document.querySelectorAll('.nav-link').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+}
+
+function setFilter(f){
+  activeFilter=f;
+  ['all','liked','reviewed'].forEach(k=>{const b=document.getElementById('f-'+k);if(b){b.style.borderColor='';b.style.color='';}});
+  const b=document.getElementById('f-'+f);
+  if(b){b.style.borderColor='var(--gold)';b.style.color='var(--gold)';}
+  renderFilmsGrid();
+}
+
+function openAddModal(){document.getElementById('addModal').classList.add('open');setTimeout(()=>document.getElementById('newTitle').focus(),100);}
+function openListModal(){document.getElementById('listModal').classList.add('open');setTimeout(()=>document.getElementById('listName').focus(),100);}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+function pickStar(v){currentRating=v;document.querySelectorAll('.star-pick').forEach(s=>s.classList.toggle('active',parseInt(s.dataset.v)<=v));}
+
+function addFilm(){
+  const title=document.getElementById('newTitle').value.trim();
+  if(!title){document.getElementById('newTitle').style.borderColor='var(--rust)';return;}
+  films.unshift({id:nextId++,title,year:document.getElementById('newYear').value||'—',
+    director:document.getElementById('newDirector').value||'',rating:currentRating,
+    liked:document.getElementById('newLiked').checked,review:document.getElementById('newReview').value.trim(),
+    date:new Date().toISOString().split('T')[0],palette:PALETTES[films.length%PALETTES.length]});
+  ['newTitle','newYear','newDirector','newReview'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('newLiked').checked=false;
+  currentRating=0;
+  document.querySelectorAll('.star-pick').forEach(s=>s.classList.remove('active'));
+  closeModal('addModal');renderAll();
+}
+
+function addList(){
+  const name=document.getElementById('listName').value.trim();
+  if(!name)return;
+  lists.push({id:nextId++,name,desc:document.getElementById('listDesc').value.trim(),films:[]});
+  document.getElementById('listName').value='';document.getElementById('listDesc').value='';
+  closeModal('listModal');renderLists();
+}
+
+function showDetail(id){
+  const f=films.find(x=>x.id===id);if(!f)return;
+  alert(`${f.title} (${f.year})\nDirector: ${f.director||'—'}\nRating: ${'★'.repeat(f.rating)}${'☆'.repeat(5-f.rating)}\n${f.liked?'♥ Liked\n':''}${f.review?'\n"'+f.review+'"':''}`);
+}
+
+function fillPrompt(text){document.getElementById('aiInput').value=text;document.getElementById('aiInput').focus();}
+
+// chip toggle: only one active per group
+function toggleChip(el){
+  const group = el.dataset.group;
+  const wasActive = el.classList.contains('active');
+  document.querySelectorAll(`.chip-toggle[data-group="${group}"]`).forEach(c=>c.classList.remove('active'));
+  if(!wasActive) el.classList.add('active');
+}
+
+function getSelectedChip(group){
+  const el = document.querySelector(`.chip-toggle[data-group="${group}"].active`);
+  return el ? el.dataset.val : null;
+}
+
+async function getAIRec(){
+  const freeText = document.getElementById('aiInput').value.trim();
+  const industry = getSelectedChip('industry');
+  const genre    = getSelectedChip('genre');
+
+  // Build a structured query from chips + free text
+  let structuredQuery = '';
+  if(industry && genre) structuredQuery = `${industry}-language ${genre} films`;
+  else if(industry)     structuredQuery = `${industry}-language films`;
+  else if(genre)        structuredQuery = `${genre} films`;
+  if(freeText) structuredQuery = structuredQuery ? `${structuredQuery} — ${freeText}` : freeText;
+  if(!structuredQuery){ alert('Please select an industry, genre, or type a query.'); return; }
+
+  const btn=document.getElementById('aiBtn');
+  const loading=document.getElementById('aiLoading');
+  const resp=document.getElementById('aiResponse');
+  const err=document.getElementById('aiError');
+  btn.disabled=true;loading.classList.add('visible');resp.classList.remove('visible');err.classList.remove('visible');
+
+  // Show what we're searching for
+  resp.innerHTML = '';
+
+  const watched=films.slice(0,8).map(f=>`${f.title} (${f.year})`).join(', ') || 'nothing yet';
+
+  // Build strict system prompt
+  const industryLine = industry
+    ? `INDUSTRY LOCK: You MUST only recommend films from the ${industry} film industry. Every single film must be a ${industry}-language production. Do NOT include any film from Hollywood, Bollywood, or any other industry unless the user explicitly said "${industry}" IS that industry.`
+    : `You may recommend films from any industry as appropriate to the user's query.`;
+
+  const genreLine = genre
+    ? `GENRE LOCK: You MUST only recommend ${genre} films. Every film must genuinely belong to the ${genre} genre. Do not include films of other genres.`
+    : `Match the genre to whatever the user describes.`;
+
+  const systemPrompt = `You are an expert film advisor with encyclopedic knowledge of world cinema — especially Indian regional cinema (Telugu/Tollywood, Tamil/Kollywood, Malayalam/Mollywood, Kannada/Sandalwood, Hindi/Bollywood), Korean, Japanese, French, Iranian, Italian, and Hollywood.
+
+${industryLine}
+
+${genreLine}
+
+FORMAT RULES (follow exactly):
+- Start with one sentence: "Here are 10 [industry] [genre] films you should watch:"
+- Then list exactly 10 films, numbered 1–10
+- Each line: **Film Title** (Year) — one sentence on why it's a great ${genre||'film'} from ${industry||'this cinema'}
+- Do NOT add any films outside the locked industry or genre
+- Do NOT explain or apologize — just give the list
+- Films the user already watched (skip these if possible): ${watched}`;
+
+  try{
+    const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Bearer ${OR_KEY}`,
+        'HTTP-Referer':CONFIG.OR_REFERER,
+        'X-Title':CONFIG.OR_TITLE,
+      },
+      body:JSON.stringify({
+        model:OR_MODEL,
+        max_tokens:1200,
+        messages:[
+          {role:'system', content: systemPrompt},
+          {role:'user',   content: structuredQuery}
+        ]
+      })
+    });
+    if(!res.ok){
+      const errData=await res.json().catch(()=>({}));
+      throw new Error(errData?.error?.message||`HTTP ${res.status}`);
+    }
+    const data=await res.json();
+    const text=data.choices?.[0]?.message?.content||'No response received.';
+    // Show the resolved query as a label above results
+    const label = `<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">Results for: <span style="color:rgba(200,168,75,0.8)">${structuredQuery}</span></div>`;
+    resp.innerHTML = label + text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    resp.classList.add('visible');
+  }catch(e){
+    err.textContent='⚠ '+(e.message||'Could not reach OpenRouter. Check your API key or network.');
+    err.classList.add('visible');
+  }
+  loading.classList.remove('visible');btn.disabled=false;
+}
+
+renderAll();
+</script>
